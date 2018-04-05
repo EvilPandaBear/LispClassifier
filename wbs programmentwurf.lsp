@@ -6,7 +6,7 @@
 ; 2. Element : Eine Liste von Listen, die jeweils einem bewerteten Beispiel entsprechen
 ; Ein bewertetes Beispiel ist eine Liste der Attributwerte sowie eine Bewertung "ja" "nein"
 
-(setq *path-to-vs* "C:/TEMP/ball_lernen.lsp")
+(setq *path-to-vs* "C:\Users\\halecket\\OneDrive - Hewlett Packard Enterprise\\Uni\\6. Semester\\WBS\\programmentwurf\\LispClassifier\\exampledata")
 (setq *path-to-testdata* "C:/TEMP/ball_lernen.lsp")
 
 (DEFUN  LOAD-EXAMPLESET (Filename)
@@ -193,6 +193,15 @@
 	)
 )
 
+; checks if the test object matches the concept
+; if true, the test object has an accepted flag
+; if false, the test object has an rejected flag
+(defun is-accepted (concept test-object)
+	(cond
+		((includes concept test-object) "accepted")
+		(T "rejected")
+	)
+)
 
                
 
