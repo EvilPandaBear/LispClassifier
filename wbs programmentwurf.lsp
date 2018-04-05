@@ -20,8 +20,10 @@
        (COND ((EQ READLINE STREAM) (PROGN (CLOSE STREAM) NIL))
              (T (CONS READLINE 
                       (READ-EXAMPLELIST STREAM))))))
-
-; Version Space
+					  
+; ---------------------------------------------------------------------
+; --------------------------- Version Space ---------------------------
+; ---------------------------------------------------------------------
 
 (setq *Star* '*Star*)
 (setq *Floor* '*Floor*)
@@ -132,8 +134,6 @@
          (list (prune (mapcar (lambda (x) (if (includes x example) nil x)) (get-S VS)))
                (remove-less-general (flatten (mapcar (lambda (x) (specialize example (get-S VS) x)) (get-G VS))))))))
 
-
-
 (defun initVS (number)
   (initVS-help number NIL NIL))
 
@@ -162,8 +162,36 @@
 (format T "S = ~S ~% G = ~S ~% New Example: ~2D - ~S ~% " (get-S VS) (get-G VS) n (car examples) )
 )))
 
+; ----------------------------------------------------------------------
+; ---- Call classify (learn-conept *path-to-vs*) *path-to-testdata* ----
+; ----------------------------------------------------------------------
 
-(defun classify (version-space *path-to-vs*) *path-to-testdata*)
+; gets the test objects out of a lisp file
+; the calles the classify-objects mapping function
+(defun classify (concept testdata)
+	(let
+		(test-objects ()) ;hier muss logik hin zum lesen von lisp liste
+	)
+		(classify-objects concept test-objects)
+)
+
+; just calls version-space and makes a concept out of the training data
+(defun learn-concept (training-data-path)
+	(version-space training-data-path)
+)
+
+; Gets the concept and test objects
+; maps one object and if it is accepted or not to 
+; each index of the test objects list itself
+(defun classify-objects (concept test-objects)
+	(mapcar
+		(lambda (test-object) 
+			(list 
+				test-object (is-accepted concept test-object) 
+			)
+		) test-objects
+	)
+)
 
 
                
