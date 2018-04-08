@@ -38,6 +38,9 @@
          (cons (car Example) (generalize (cdr Example) (cdr Concept))))
         (T (cons *Star* (generalize (cdr Example) (cdr Concept))))))
 
+
+
+; Checks if an example matches a hypothesis
 (defun includes (Hypothesis Example)
    (cond ((NULL Hypothesis) T)
          ((OR (Equal (car Hypothesis) (car Example))
@@ -56,7 +59,6 @@
 
 ; Voraussetzung: Hy umfasst das negative Beispiel !
 ;                MGS umfasst es nicht !
-
 (defun specialize-help (NegE MGS Hy StartOfH ListOfHypothesis)
 ;  (print NegE)(print MGS) (print Hy) (print StartOfH) (print ListOfHypothesis)(terpri)
   (cond ((NULL Hy) ListOfHypothesis)
@@ -73,6 +75,8 @@
                           ListOfHypothesis))))
                 
 
+
+; Checks if an example is included in a list of hypotheses 
 (defun is-included (Hy Hylist)
   (cond ((null hylist) nil)
         ((includes (car Hylist) Hy) T)
@@ -162,6 +166,18 @@
 (format T "S = ~S ~% G = ~S ~% New Example: ~2D - ~S ~% " (get-S VS) (get-G VS) n (car examples) )
 )))
 
+(defun version-space-list (training-data)
+    (do ((examples training-data                                          ; init var binding
+            (cdr examples))                                             ; step var binding
+        (vs (initvs (length (caar training-data)))                           ; init var binding
+            (version-space-step (caar examples) (cadar examples) vs))   ; step var binding
+        (n 0 (+ n 1)))                                                  ; init + step var binding
+        ((null examples) vs)                                            ; (termaination condition) return value
+        ; step action
+        (format T "New Example: ~2D ~% " n )
+    )
+)
+
 ; ----------------------------------------------------------------------
 ; ---- Call classify (learn-conept *path-to-vs*) *path-to-testdata* ----
 ; ----------------------------------------------------------------------
@@ -170,14 +186,21 @@
 ; the calles the classify-objects mapping function
 (defun classify (concept testdata)
 	(let
-		(test-objects ()) ;hier muss logik hin zum lesen von lisp liste
-	)
+		((test-objects (load-exampleset testdata))) ;hier muss logik hin zum lesen von lisp liste
 		(classify-objects concept test-objects)
+	)
 )
 
-; just calls version-space and makes a concept out of the training data
+; calls AQ algorithm with filtered list of positive and negative examples
 (defun learn-concept (training-data-path)
-	(version-space training-data-path)
+	(let 
+		((training-data (load-exampleset training-data-path)))
+		;((training-data (load-exampleset training-data-path)))
+		(AQ (filterPos (cdr (get-examplelist training-data))) (filterNeg (cdr (get-examplelist training-data))))
+		;(filterNeg (cdr (get-examplelist training-data)))
+		;(filterPos (cdr (get-examplelist training-data)))
+		;(version-space-list training-data)
+	)
 )
 
 ; Gets the concept and test objects
@@ -187,7 +210,7 @@
 	(mapcar
 		(lambda (test-object) 
 			(list 
-				test-object (is-accepted concept test-object) 
+				(eval test-object) (is-accepted concept test-object) 
 			)
 		) test-objects
 	)
@@ -198,13 +221,96 @@
 ; if false, the test object has an rejected flag
 (defun is-accepted (concept test-object)
 	(cond
-		((includes concept test-object) "accepted")
-		(T "rejected")
+		((null concept) "rejected")
+		((is-included (car (eval test-object)) (car concept)) "accepted")
+		(T (is-accepted (cdr concept) test-object))
 	)
 )
 
-               
+(defun any-accepted (concept test-object)
+	(cond
+		((null concept) NIL)
+		((is-included test-object concept) T)
+		(T (any-accepted (cdr concept) test-object))
+	)
+)
+; ----------------------------------------------------------------------
+; ----------------------------- AQ Algorithm ---------------------------
+; ----------------------------------------------------------------------
+
+; Filters all positive data out of trainings dataset
+(defun filterPos (testdata)
+	(cond 
+		((null testdata) NIL)
+		(
+			(eval (equal "ja" (cadar testdata))) 
+			(cons (car testdata) (filterPos (cdr testdata)))
+		)
+		(T (filterPos (cdr testdata)))
+	)
+)
 
 
+; Filters all negative data out of trainings dataset
+(defun filterNeg (testdata)
+	(cond 
+		((null testdata) NIL)
+		(
+			(eval (equal "nein" (cadar testdata))) 
+			(cons (car testdata) (filterNeg (cdr testdata)))
+		)
+		(T (filterNeg (cdr testdata)))
+	)
+)
 
 
+; The recursive AQ algorithm
+(defun AQ (bPos bNeg)
+	(cond 
+		((null bPos) NIL)
+		(T
+			(let 
+				((star (make-star (car bPos) bNeg))) 
+				(cons 
+					star
+					(AQ 
+						(remove-bPos-covered 
+							(cdr bPos)
+							star
+						) 
+						bNeg
+					)
+				)
+			)			
+		)
+	)
+	;(format T "--" bPos)
+)
+
+
+; Makes a star out of a positive object and negative objects
+(defun make-star (pos-object neg-objects)
+	(get-G 
+		(version-space-list 
+			(cons pos-object neg-objects)
+		)
+	)
+)
+
+
+; Removes positive examples that are already covered
+(defun remove-bPos-covered (bPos star)
+	(cond
+		((null bPos) NIL)
+		;((includes star (caar bPos)) (remove-bPos-covered (cdr bPos) star))
+		((is-included (caar bPos) star) (remove-bPos-covered (cdr bPos) star))
+		(T 
+			(cons
+					(car bPos)
+					(remove-bPos-covered (cdr bPos) star)
+			)
+		)
+	)
+	
+	;(format T "-" bPos)
+)
