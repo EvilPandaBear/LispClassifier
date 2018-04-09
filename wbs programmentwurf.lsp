@@ -179,7 +179,7 @@
 )
 
 ; ----------------------------------------------------------------------
-; ---- Call classify (learn-conept *path-to-vs*) *path-to-testdata* ----
+; ---- Call (classify (learn-conept "A2 formatted") "TestA2 formatted") ----
 ; ----------------------------------------------------------------------
 
 ; gets the test objects out of a lisp file
@@ -227,13 +227,7 @@
 	)
 )
 
-(defun any-accepted (concept test-object)
-	(cond
-		((null concept) NIL)
-		((is-included test-object concept) T)
-		(T (any-accepted (cdr concept) test-object))
-	)
-)
+
 ; ----------------------------------------------------------------------
 ; ----------------------------- AQ Algorithm ---------------------------
 ; ----------------------------------------------------------------------
